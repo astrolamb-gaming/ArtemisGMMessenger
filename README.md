@@ -16,7 +16,6 @@ Multiple ships and stations can be selected for sending popups.
 Github repo can be found here: 
 https://github.com/astrolamb-gaming/ArtemisGMMessenger
 
-Requires Hermes 9 or higher
+Requires Hermes 9 or higher<div></div>
 Port 2015 must be port forwarded for the server
 
-- Lt. Cmdr. Matthew Vaj, 2nd Space Fleet, 4th Light Division, XO TSN Viper (aka Astrolamb)
