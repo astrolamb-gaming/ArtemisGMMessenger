@@ -13,6 +13,8 @@ Note that all comms messages, regardless of filter, go to ALL SHIPS!!
 Popup messages, on the other hand, can be specified as to which ships and stations the message is sent to. 
 Multiple ships and stations can be selected for sending popups.
 
+As of V1.2 AGMCC and Hermes version 10, the user now can kick clients from Helm, Weapons, Engineering, and the Game Master console.
+
 Github repo can be found here: 
 https://github.com/astrolamb-gaming/ArtemisGMMessenger
 
