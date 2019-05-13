@@ -107,10 +107,20 @@ public class ArtemisGMMessenger {
         menu.add(connectMenuItem);
         JMenu kickPlayerMenu = new JMenu("Kick Connected Console");
         menuBar.add(kickPlayerMenu);
+        JMenuItem debug = new JMenuItem("Debug");
         indicator = new JMenu();
         indicator.setText("Not Connected");
         indicator.setForeground(Color.red); 
         menuBar.add(Box.createHorizontalGlue());
+        menu.add(debug);
+        debug.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String s = showDebugTextPrompt();
+                s+="\n";
+                sendDebugText(s);
+             } 
+        }); 
         menuBar.add(indicator);
         
         r = new Runnable() {
@@ -661,6 +671,30 @@ public class ArtemisGMMessenger {
             s = showIPPrompt();
         }
         return s;
+    }
+    
+    public String showDebugTextPrompt() {
+        Object message = "Debug Message";
+        String title = "Send Debug Message";
+        String s = (String) JOptionPane.showInputDialog(null, message, title, JOptionPane.QUESTION_MESSAGE, null, null, defaultIP);
+        if (s == null) {
+            return null;
+        }
+        if (!s.equals("")) {
+            this.ip = s;
+            //connect(ip);
+        } else {
+            JOptionPane.showMessageDialog(null, "That is not a valid IP address.");
+            s = showIPPrompt();
+        }
+        return s;
+    }
+    void sendDebugText(String text) {
+        try {
+            socket.getOutputStream().write(text.getBytes());
+        } catch(IOException e) {
+            e.printStackTrace();
+        }
     }
     
     
