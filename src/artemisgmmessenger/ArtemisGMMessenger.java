@@ -42,18 +42,6 @@ import net.miginfocom.swing.MigLayout;
  * @author Matthew
  */
 public class ArtemisGMMessenger {
-    
-    int port = 2015;
-    String ip = "starry.mytsn.net";
-    Socket socket;
-    String defaultIP = "starry.mytsn.net";
-    Runnable r;
-    JMenu indicator;
-    ScheduledFuture<?> beeperHandle;
-    
-    List<String> stationList = new ArrayList<>();
-    private boolean attemptingConnect;
-
     /**
      * @param args the command line arguments
      */
@@ -67,6 +55,18 @@ public class ArtemisGMMessenger {
             } 
         });
     }
+    
+    int port = 2015;
+    String ip = "starry.mytsn.net";
+    Socket socket;
+    String defaultIP = "starry.mytsn.net";
+    Runnable r;
+    JMenu indicator;
+    ScheduledFuture<?> beeperHandle;
+    
+    List<String> stationList = new ArrayList<>();
+    private boolean attemptingConnect;
+
     
     
     
@@ -105,6 +105,8 @@ public class ArtemisGMMessenger {
             }
         }); 
         menu.add(connectMenuItem);
+        JMenu kickPlayerMenu = new JMenu("Kick Connected Console");
+        menuBar.add(kickPlayerMenu);
         indicator = new JMenu();
         indicator.setText("Not Connected");
         indicator.setForeground(Color.red); 
@@ -493,8 +495,90 @@ public class ArtemisGMMessenger {
 //          scheduler.schedule(new Runnable() {
 //            public void run() { beeperHandle.cancel(true); }
 //        }, 60 * 60, SECONDS);
+        
+        for (int i = 1; i < 9; i++) {
+            final int j = i;
+            JMenu ship = new JMenu("Ship " + i);
+            JMenuItem helm = new JMenuItem("Helm");
+            helm.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String shipNums = String.valueOf(j);
+                    String consoleNums = "Helm";
+                    System.out.println("Kicking Hlm");
+                    kickClients(shipNums, consoleNums);
+                }
+            }); 
+            JMenuItem wea = new JMenuItem("Weapons");
+            wea.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String shipNums = String.valueOf(j);
+                    String consoleNums = "Weapons";
+                    System.out.println("Kicking Weapons");
+                    kickClients(shipNums, consoleNums);
+                }
+            }); 
+            JMenuItem eng = new JMenuItem("Engineering");
+            eng.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String shipNums = String.valueOf(j);
+                    String consoleNums = "Engineering";
+                    System.out.println("Kicking Eng");
+                    kickClients(shipNums, consoleNums);
+                }
+            }); 
+            JMenuItem allConsole = new JMenuItem("Kick Everyone from ship");
+            allConsole.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String shipNums = String.valueOf(j);
+                    String consoleNums = "";
+                    for (String s : stationList) {
+                        consoleNums += s;
+                        consoleNums += ",";
+                    }
+                    consoleNums = consoleNums.substring(0, consoleNums.length()-1);
+                    System.out.println("All: " + consoleNums);
+                    kickClients(shipNums, consoleNums);
+                }
+            }); 
+            ship.add(helm);
+            ship.add(wea);
+            ship.add(eng);
+            ship.add(allConsole);
+            kickPlayerMenu.add(ship);
+            
+        }
+        JMenuItem everone = new JMenuItem("Kick Everyone");
+        everone.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String s = "";
+                for (String c : stationList) {
+                    s += c;
+                    s+= ",";
+                }
+                s = s.substring(0, s.length()-1);
+                for (int m = 1; m < 9; m++){
+                    kickClients(String.valueOf(m), s); 
+                }
+            }
+        });
+        kickPlayerMenu.add(everone);
+        JMenuItem gm = new JMenuItem("Kick Game Master");
+        gm.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                for (int m = 1; m < 9; m++) {
+                    kickClients(String.valueOf(m), "GameMaster");
+                }
+            }
+        });
+        kickPlayerMenu.add(gm);
 
-    }
+    } 
     
     public void connect(String ip) {
         System.out.println("Connecting");
@@ -614,6 +698,22 @@ public class ArtemisGMMessenger {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+    }
+    void kickClients(String ships, String stations) {
+        if (ships.equals("") || stations.equals("")) {
+            System.err.println("Sting is empty! Should not be!");
+            return;
+        }
+        stations = stations.substring(0, stations.length());
+        ships = "kickShip" + ships;
+        stations = "kick" + stations;
+        String m = "kickClients(" + ships + "," + stations + ");\n";
+        System.out.println(m);
+        try { 
+            socket.getOutputStream().write(m.getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
     
