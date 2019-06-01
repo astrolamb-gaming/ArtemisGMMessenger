@@ -5,12 +5,14 @@
  */
 package artemisgmmessenger;
 
+import artemisgmmessenger.ServerTransfer.TransferListener;
 import com.sun.java.swing.plaf.motif.MotifBorders;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -52,6 +54,9 @@ public class ArtemisGMMessenger {
             public void run() {
                 ArtemisGMMessenger agmm = new ArtemisGMMessenger();
                 agmm.setup();
+                
+                
+                
             } 
         });
     }
@@ -67,7 +72,7 @@ public class ArtemisGMMessenger {
     List<String> stationList = new ArrayList<>();
     private boolean attemptingConnect;
 
-    
+    JSONPersistenceHandler persistenceHandler;
     
     
     
@@ -86,9 +91,15 @@ public class ArtemisGMMessenger {
         stationList.add("CaptainsMap");
         stationList.add("GameMaster");
         stationList.add("MainScreen");
+        
+        persistenceHandler = new JSONPersistenceHandler(new File("./resources/persistentGMData.json"));
+        //defaultIP = (String)persistenceHandler.getOption("defaultIP");
+        if (defaultIP == null) {
+            defaultIP = "localhost";
+        }
         //sendIdleTextAllClients("hello", "there");
         Dimension buttonSize = new Dimension(175,40);
-        JFrame frame = new JFrame("Artemis Game Master Comms Console");
+        JFrame frame = new JFrame("Artemis Game Master Comms Console - v1.31 DEV");
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setPreferredSize(new Dimension(650,700));
@@ -104,22 +115,34 @@ public class ArtemisGMMessenger {
                 connect(ip);
             }
         }); 
-        menu.add(connectMenuItem);
+        JMenuItem transferButton = new JMenuItem("Server Transfer");
+        transferButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                startServerTransfer();
+            }
+        });
+        JMenuItem debug = new JMenuItem("Debug");
+        menu.add(connectMenuItem); 
+        menu.add(debug);
+        menu.add(transferButton);
         JMenu kickPlayerMenu = new JMenu("Kick Connected Console");
         menuBar.add(kickPlayerMenu);
-        JMenuItem debug = new JMenuItem("Debug");
+        
         indicator = new JMenu();
         indicator.setText("Not Connected");
         indicator.setForeground(Color.red); 
         menuBar.add(Box.createHorizontalGlue());
-        menu.add(debug);
+        
+        
+        
         debug.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String s = showDebugTextPrompt();
                 s+="\n";
                 sendDebugText(s);
-             } 
+             }
         }); 
         menuBar.add(indicator);
         
@@ -324,12 +347,19 @@ public class ArtemisGMMessenger {
         filterLabel.setPreferredSize(buttonSize);
         filterPanel.add(filterLabel, "spanx");
         JToggleButton alert = new JToggleButton("Alert");
+        alert.setForeground(Color.RED);
         JToggleButton side = new JToggleButton("Side");
+        side.setForeground(Color.blue); 
         JToggleButton status = new JToggleButton("Status");
+        status.setForeground(Color.red);
         JToggleButton player = new JToggleButton("Player");
+        player.setForeground(Color.green);
         JToggleButton base = new JToggleButton("Station");
+        base.setForeground(Color.YELLOW); 
         JToggleButton enemy = new JToggleButton("Enemy");
+        enemy.setForeground(Color.red);
         JToggleButton friend = new JToggleButton("Friend");
+        friend.setForeground(Color.blue); 
         List<JToggleButton> filters = new ArrayList<>();
         filters.add(alert);
         filters.add(side);
@@ -500,7 +530,7 @@ public class ArtemisGMMessenger {
         filterPanel.add(spacer);
         filterPanel.add(sendComms);
         sendPanel.add(sendPopup);
-        frame.pack();
+        
         beeperHandle = scheduler.scheduleWithFixedDelay(r, 5, 5, SECONDS);
 //          scheduler.schedule(new Runnable() {
 //            public void run() { beeperHandle.cancel(true); }
@@ -539,6 +569,7 @@ public class ArtemisGMMessenger {
                     kickClients(shipNums, consoleNums);
                 }
             }); 
+            
             JMenuItem allConsole = new JMenuItem("Kick Everyone from ship");
             allConsole.addActionListener(new ActionListener() {
                 @Override
@@ -587,6 +618,8 @@ public class ArtemisGMMessenger {
             }
         });
         kickPlayerMenu.add(gm);
+        
+        frame.pack();
 
     } 
     
@@ -670,6 +703,7 @@ public class ArtemisGMMessenger {
             JOptionPane.showMessageDialog(null, "That is not a valid IP address.");
             s = showIPPrompt();
         }
+        //persistenceHandler.setOption("defaultIP", s);
         return s;
     }
     
@@ -749,6 +783,31 @@ public class ArtemisGMMessenger {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    void transferServers(String s) {
+        try {
+            socket.getOutputStream().write(s.getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    void startServerTransfer() {
+        ServerTransfer st = new ServerTransfer();
+        st.setup();
+        st.addTransferListener(st.new TransferListener() {
+            @Override
+            public void transfer(String s) {
+                try {
+                    System.out.println("Trying to send:");
+                    System.out.println(s);
+                    socket.getOutputStream().write(s.getBytes()); 
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        
     }
     
     class ButtonState {
