@@ -71,7 +71,7 @@ public class ArtemisGMMessenger {
     
     List<String> stationList = new ArrayList<>();
     private boolean attemptingConnect;
-
+    private boolean isConnected = false;
     JSONPersistenceHandler persistenceHandler;
     
     
@@ -99,7 +99,7 @@ public class ArtemisGMMessenger {
         }
         //sendIdleTextAllClients("hello", "there");
         Dimension buttonSize = new Dimension(175,40);
-        JFrame frame = new JFrame("Artemis Game Master Comms Console - v1.31 DEV");
+        JFrame frame = new JFrame("Artemis Game Master Comms Console - v1.32");
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setPreferredSize(new Dimension(650,700));
@@ -465,8 +465,11 @@ public class ArtemisGMMessenger {
             public void actionPerformed(ActionEvent e) {
                 // TODO: Send message code here
                 System.out.println("Sending... (Not really)");
-
-                String s = field.getText();
+                if (!isConnected) {
+                    showNotConnectedWarning("You aren't connected to an artemis server with Hermes support! Please check your connection.");
+                    return;
+                }
+                String s = field.getText(); 
                 if (s.equals("")) {
                     return;
                 }
@@ -512,9 +515,13 @@ public class ArtemisGMMessenger {
         sendComms.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                if (!isConnected) {
+                    showNotConnectedWarning("Warning! Not connected to an Artemis server with Hermes support. Please check your connection.");
+                    return;
+                }
                 String filter = "";
                 for (JToggleButton j : filters) {
-                    if (j.isSelected()) {
+                    if (j.isSelected()) { 
                         filter += "commsFilter"+j.getText();
                     }
                 }
@@ -647,36 +654,35 @@ public class ArtemisGMMessenger {
     }
     private boolean attemptSocket(String ip) {
         if (ip == null) {
-            indicator.setText("Not Connected");
-            indicator.setForeground(Color.red);
+            setConnected(false); 
             return false;
         }
         try {
             if (socket != null) {
                 try {
                     socket.close();
+                    setConnected(false); 
                 } catch (IOException e) {
+                    setConnected(false); 
                     System.err.println("Socket not closing!!!");
                 }
             }
             System.out.println("Creating socket...");
             socket = new Socket(ip, port);
             defaultIP = ip;
+            setConnected(true); 
             return true;
         } catch (UnknownHostException e) {
             System.out.println("Unknown Host Exception");
             e.printStackTrace();
-            indicator.setText("Not Connected");
-            indicator.setForeground(Color.red);
+            setConnected(false); 
             return false;
         } catch (ConnectException e) {
-            indicator.setText("Not Connected");
-            indicator.setForeground(Color.red);
+            setConnected(false); 
             e.printStackTrace();
             return false;
         } catch (IOException e) {
-            indicator.setText("Not Connected");
-            indicator.setForeground(Color.red);
+            setConnected(false); 
             System.out.println("IOException");
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, "There is no server running at that IP address.");
@@ -723,6 +729,16 @@ public class ArtemisGMMessenger {
         }
         return s;
     }
+    
+    /**
+     * popup message intended to indicate that the client is not connected.
+     * @param text 
+     */
+    public void showNotConnectedWarning(String text) {
+        //JOptionPane.showConfirmDialog(null, text);
+        JOptionPane.showMessageDialog(null, text, "Connection Error!", JOptionPane.OK_OPTION);
+    }
+    
     void sendDebugText(String text) {
         try {
             socket.getOutputStream().write(text.getBytes());
@@ -808,6 +824,17 @@ public class ArtemisGMMessenger {
             }
         });
         
+    }
+    
+    void setConnected (boolean connected) {
+        this.isConnected = connected;
+        if (connected) {
+            indicator.setText("Connected");
+            indicator.setForeground(Color.green);
+        } else {
+            indicator.setText("Not Connected");
+            indicator.setForeground(Color.red); 
+        }
     }
     
     class ButtonState {
