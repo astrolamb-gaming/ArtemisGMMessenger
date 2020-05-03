@@ -73,6 +73,7 @@ public class ArtemisGMMessenger {
     private boolean attemptingConnect;
     private boolean isConnected = false;
     JSONPersistenceHandler persistenceHandler;
+    JTextArea messageField;
     
     
     
@@ -91,15 +92,15 @@ public class ArtemisGMMessenger {
         stationList.add("CaptainsMap");
         stationList.add("GameMaster");
         stationList.add("MainScreen");
-        
+        // TODO: Get this working!!!!!!!!!!!
         persistenceHandler = new JSONPersistenceHandler(new File("./resources/persistentGMData.json"));
-        //defaultIP = (String)persistenceHandler.getOption("defaultIP");
+        //defaultIP = (String)persistenceHandler.get("defaultIP");
         if (defaultIP == null) {
             defaultIP = "localhost";
         }
         //sendIdleTextAllClients("hello", "there");
         Dimension buttonSize = new Dimension(175,40);
-        JFrame frame = new JFrame("Artemis Game Master Comms Console - v1.32");
+        JFrame frame = new JFrame("Artemis Game Master Comms Console - v1.33");
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setPreferredSize(new Dimension(650,700));
@@ -162,6 +163,7 @@ public class ArtemisGMMessenger {
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
+                        System.out.println("Not Connected");
                         indicator.setText("Not Connected");
                         indicator.setForeground(Color.red);
                         return;
@@ -211,10 +213,11 @@ public class ArtemisGMMessenger {
         messageLabel.setPreferredSize(new Dimension(15000,40));
         messagePanel.add(messageLabel, BorderLayout.NORTH);
         
-        JTextArea field = new JTextArea();
-        field.setPreferredSize(new Dimension(15000, 60));
-        field.setBorder(new EtchedBorder());
-        messagePanel.add(field, BorderLayout.CENTER);
+        messageField = new JTextArea();
+        messageField.setPreferredSize(new Dimension(15000, 60));
+        messageField.setBorder(new EtchedBorder());
+        messageField.setLineWrap(true); 
+        messagePanel.add(messageField, BorderLayout.CENTER);
         
         top.add(messagePanel);
         
@@ -469,10 +472,7 @@ public class ArtemisGMMessenger {
                     showNotConnectedWarning("You aren't connected to an artemis server with Hermes support! Please check your connection.");
                     return;
                 }
-                String s = field.getText(); 
-                if (s.equals("")) {
-                    return;
-                }
+                
                 String stations = "";
                 String shipString = "";
                 for (JToggleButton j : ships) {
@@ -484,6 +484,11 @@ public class ArtemisGMMessenger {
                             shipString += "+popup" + j.getText().replace(" ", "");
                         }
                     }
+                }
+                // Check if no ships are selected. If so, send error popup message
+                if (shipString.equals("")) {
+                    JOptionPane.showMessageDialog(null, "One or more ships need to be selected to send a popup message.", "No Ship Selected!", JOptionPane.OK_OPTION);
+                    return;
                 }
                 
                 for (JToggleButton j : consoles) {
@@ -504,8 +509,17 @@ public class ArtemisGMMessenger {
                         }
                     }
                 }
+                // Check if no consoles are selected. If so, send error popup message
+                if (stations.equals("")) {
+                    JOptionPane.showMessageDialog(null, "One or more consoles need to be selected to send a popup message.", "No Console Selected!", JOptionPane.OK_OPTION);
+                    return;
+                }
                 
-                sendPopupTextAllClients(stations, shipString, s); 
+                try {
+                    sendPopupTextAllClients(stations, shipString, handleMessageField());  
+                } catch (Exception ex) {
+                    // Don't send message
+                }
                 
 
             }
@@ -525,10 +539,26 @@ public class ArtemisGMMessenger {
                         filter += "commsFilter"+j.getText();
                     }
                 }
+                if (filter.equals("")) {
+                    JOptionPane.showMessageDialog(null, "A Comms Message Option must be selected to send a comms message.", "No Comms Message Options Selected!", JOptionPane.OK_OPTION);
+                    return;
+                }
+                
                 String fromText = from.getText();
-                String messageText = field.getText();
-                sendCommsTextAllClients(filter, fromText, messageText); 
-                sendIdleTextAllClients(fromText, messageText); 
+                if (fromText.equals("")) {
+                    JOptionPane.showMessageDialog(null, "An origin must be specified to send a comms message.", "No Comms Origin!", JOptionPane.OK_OPTION);
+                    return;
+                }
+//                String messageText = messageField.getText();
+//                if (messageText.equals("")) {
+//                    j
+//                }
+                try {
+                    sendCommsTextAllClients(filter, fromText, handleMessageField()); 
+                    sendIdleTextAllClients(fromText, handleMessageField()); 
+                } catch (Exception ex) {
+                    
+                }
             }
         }); 
         pops.add(sendPanel, BorderLayout.SOUTH);
@@ -630,6 +660,14 @@ public class ArtemisGMMessenger {
 
     } 
     
+    public String handleMessageField() throws Exception {
+        String s = messageField.getText(); 
+        if (s.equals("")) {
+            throw new Exception("Message Field empty");
+        } 
+        return s;
+    }
+    
     public void connect(String ip) {
         System.out.println("Connecting");
         indicator.setText("Trying to connect...");
@@ -640,13 +678,14 @@ public class ArtemisGMMessenger {
             System.out.println("Making socket");
             if (attemptSocket(showIPPrompt())) {
                 attemptingConnect = false;
-                indicator.setText("Connected");
-                indicator.setForeground(Color.GREEN); 
+                setConnected(true); 
             } else {
                 System.err.println("Didn't connect??");
                 attemptingConnect = false;
+                setConnected(false); 
             }
         } catch (Exception e) {
+            setConnected(false); 
             System.out.println("Exception");
             e.printStackTrace();
         }
@@ -749,11 +788,24 @@ public class ArtemisGMMessenger {
     
     
     
+    String filterString(String str) {
+        
+        str = str.replace("'", "\'");
+        str = str.replace("\\","\\\\");
+        str = str.replace("\"", "\\\"");
+        
+        return str;
+    }
+    
     void sendIdleTextAllClients(String from, String message) {
-        String m = "sendIdleTextAllClients('" + from + "','" + message + "^');\n";
+        //from = from.replace("\\","\\\\");
+        //from = from.replace("/", message);
+        from = filterString(from);
+        message = filterString(message);
+        String m = "sendIdleTextAllClients(\"" + from + "\",\"" + message + "^\");\n";
         System.out.println(m);
         try {
-            socket.getOutputStream().write(m.getBytes()); 
+            socket.getOutputStream().write(m.getBytes());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -762,7 +814,9 @@ public class ArtemisGMMessenger {
         if (filter.equals("")) {
             filter = "0";
         }
-        String m = "sendCommsTextAllClients(" + filter + ",'" + from + "','" + message + "^');\n";
+        from = filterString(from);
+        message = filterString(message);
+        String m = "sendCommsTextAllClients(" + filter + ",\"" + from + "\",\"" + message + "^\");\n";
         System.out.println(m);
         try {
             socket.getOutputStream().write(m.getBytes());
@@ -772,10 +826,11 @@ public class ArtemisGMMessenger {
         }
     }
     void sendPopupTextAllClients(String stations, String ships, String message) {
+        message = filterString(message);
         if (!message.equals("")){
             //String s = ""
             
-            String m = "sendPopup(" + stations + "," + ships +  ",'" + message + "');\n";
+            String m = "sendPopup(" + stations + "," + ships +  ",\"" + message + "\");\n";
             System.out.println(m);
             try { 
                 socket.getOutputStream().write(m.getBytes());
