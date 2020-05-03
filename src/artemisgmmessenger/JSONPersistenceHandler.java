@@ -42,7 +42,7 @@ public class JSONPersistenceHandler {
             ol.getOptionsList().add(o);
         }
         try {
-        FileOutputStream fis = new FileOutputStream(persistenceFile);
+            FileOutputStream fis = new FileOutputStream(persistenceFile);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -55,8 +55,13 @@ public class JSONPersistenceHandler {
             return defaultResult;
         }
     }
+    //@Nullable
     public Object get(String key) {
-        return optionList.get(key);
+        if (optionList.containsKey(key)) {
+            return optionList.get(key);
+        } else {
+            return null;
+        }
     }
     public void addOption(String key, Object o) {
         optionList.put(key, o);
