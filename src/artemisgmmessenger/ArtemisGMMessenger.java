@@ -92,8 +92,10 @@ public class ArtemisGMMessenger {
     PersistenceHandler persistenceHandler;
     JTextArea messageField;
     JComboBox<String> encryptionKeyComboBox;
+    JComboBox<String> from;
     String[] encryptionKeys = {
         "None",
+        "Garble",
         "Arvonian",
         "Kralien",
         "Skaraan",
@@ -151,7 +153,7 @@ public class ArtemisGMMessenger {
 //        }
         //sendIdleTextAllClients("hello", "there");
         Dimension buttonSize = new Dimension(175,40);
-        JFrame frame = new JFrame("Artemis Game Master Comms Console - v1.40");
+        JFrame frame = new JFrame("Artemis Game Master Comms Console - v1.41b");
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setPreferredSize(new Dimension(650,700));
@@ -253,7 +255,10 @@ public class ArtemisGMMessenger {
         fromLabel.setPreferredSize(new Dimension(50,40));
         fromPanel.add(fromLabel,BorderLayout.NORTH);
         
-        JTextField from = new JTextField(); 
+        from = new JComboBox();
+        from.setEditable(true);
+        //from.addItem(from);
+        //JTextField from = new JTextField(); 
         from.setPreferredSize(new Dimension(15000, 40));
         //from.setBorder(new EtchedBorder());
         fromPanel.add(from, BorderLayout.CENTER);
@@ -268,6 +273,7 @@ public class ArtemisGMMessenger {
         //messagePanel.add(messageLabel, BorderLayout.NORTH);
         
         JButton previewButton = new JButton("Preview Scrambled Text");
+        previewButton.setToolTipText("Preview Scrambled Message");
         previewButton.addActionListener(new ActionListener() {
                        
             String cachedMessage;
@@ -278,9 +284,13 @@ public class ArtemisGMMessenger {
                 if (isEncryptedVisible) {
                     String s = messageField.getText();
                     messageField.setText(cachedMessage);
+                    //previewButton.setToolTipText("Preview Scrambled Message");
+                    previewButton.setText("Preview Scrambled Message");
                 } else {
                     cachedMessage = messageField.getText();
                     messageField.setText(encryptCode.scrambleMessage(cachedMessage, currentKey));
+                    //previewButton.setToolTipText("View Unscrambled Message");
+                    previewButton.setText("View Unscrambled Message"); 
                 }
                 isEncryptedVisible = !isEncryptedVisible;
             }
@@ -289,6 +299,7 @@ public class ArtemisGMMessenger {
         JLabel encryptOptionLabel = new JLabel("Scramble code: ");
         encryptionKeyComboBox = new JComboBox<>(encryptionKeys);
         encryptionKeyComboBox.setSelectedIndex(0);
+        currentKey = encryptionKeys[0];
         encryptionKeyComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent event) {
@@ -635,7 +646,7 @@ public class ArtemisGMMessenger {
                     return;
                 }
                 
-                String fromText = from.getText();
+                String fromText = from.getSelectedItem().toString();
                 if (fromText.equals("")) {
                     JOptionPane.showMessageDialog(null, "An origin must be specified to send a comms message.", "No Comms Origin!", JOptionPane.OK_OPTION);
                     return;
@@ -933,10 +944,12 @@ public class ArtemisGMMessenger {
     void sendIdleTextAllClients(String from, String message) {
         //from = from.replace("\\","\\\\");
         //from = from.replace("/", message);
+        message = encryptCode.scrambleMessage(message, currentKey);
         from = filterString(from);
+        this.from.addItem(from);
         message = filterString(message);
         //TODO: Figure out how to utilize the "key"
-        message = encryptCode.scrambleMessage(message, currentKey);
+        
         messageField.setText(message); 
         String m = "sendIdleTextAllClients(\"" + from + "\",\"" + message + "^\");\n";
         System.out.println(m);
@@ -950,7 +963,9 @@ public class ArtemisGMMessenger {
         if (filter.equals("")) {
             filter = "0";
         }
+        message = encryptCode.scrambleMessage(message, currentKey);
         from = filterString(from);
+        this.from.addItem(from);
         message = filterString(message);
         String m = "sendCommsTextAllClients(" + filter + ",\"" + from + "\",\"" + message + "^\");\n";
         System.out.println(m);
