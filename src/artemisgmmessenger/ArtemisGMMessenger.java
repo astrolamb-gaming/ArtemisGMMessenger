@@ -48,6 +48,10 @@ import java.util.logging.Logger;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JPopupMenu;
+import javax.swing.event.ListDataListener;
+import javax.swing.text.JTextComponent;
 
 /**
  *
@@ -93,6 +97,8 @@ public class ArtemisGMMessenger {
     JTextArea messageField;
     JComboBox<String> encryptionKeyComboBox;
     JComboBox<String> from;
+    JPopupMenu popupMenu;
+    
     String[] encryptionKeys = {
         "None",
         "Garble",
@@ -234,8 +240,7 @@ public class ArtemisGMMessenger {
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         
         frame.setJMenuBar(menuBar);
-        
-        
+       
         JPanel top = new JPanel(new MigLayout("flowy"));
         top.setPreferredSize(new Dimension(600,180)); 
         frame.add(top, BorderLayout.NORTH); 
@@ -674,7 +679,8 @@ public class ArtemisGMMessenger {
 //          scheduler.schedule(new Runnable() {
 //            public void run() { beeperHandle.cancel(true); }
 //        }, 60 * 60, SECONDS);
-        
+
+        // <editor-fold defaultstate="collapsed" desc="Ship Menus">
         for (int i = 1; i < 9; i++) {
             final int j = i;
             JMenu ship = new JMenu("Ship " + i);
@@ -731,6 +737,8 @@ public class ArtemisGMMessenger {
             kickPlayerMenu.add(ship);
             
         }
+        // </editor-fold>
+        
         JMenuItem everone = new JMenuItem("Kick Everyone");
         everone.addActionListener(new ActionListener() {
             @Override
@@ -757,6 +765,68 @@ public class ArtemisGMMessenger {
             }
         });
         kickPlayerMenu.add(gm);
+        // </editor-fold>
+        
+        // <editor-fold defaultstate="collapsed" desc="All the right-click menu things">
+//         
+//        popupMenu = new JPopupMenu();
+//        JMenuItem cut = new JMenuItem("Cut");
+//        cut.addActionListener(new ActionListener() {
+//            @Override
+//            public void actionPerformed(ActionEvent e) {
+//                //e.getSource().
+//                ((JTextComponent)((JMenuItem)e.getSource()).getParent()).cut();
+//            }
+//        });
+//        JMenuItem copy = new JMenuItem("Copy");
+//        copy.addActionListener(new ActionListener() {
+//            @Override
+//            public void actionPerformed(ActionEvent e) {
+//                ((JTextComponent)((JMenuItem)e.getSource()).getParent()).copy();
+//            }
+//        });
+//        JMenuItem paste = new JMenuItem("Paste");
+//        paste.addActionListener(new ActionListener() {
+//            @Override
+//            public void actionPerformed(ActionEvent e) {
+//                ((JTextComponent)((JMenuItem)e.getSource()).getParent()).paste();
+//            }
+//        });
+//        popupMenu.add(cut);
+//        popupMenu.add(copy);
+//        popupMenu.add(paste);
+//        
+//        
+//        JPopupMenu comboBoxMenu = new JPopupMenu();
+//        cut = new JMenuItem("Cut");
+//        cut.addActionListener(new ActionListener() {
+//            @Override
+//            public void actionPerformed(ActionEvent e) {
+//                //e.getSource().
+//                ((JTextField) ((JComboBox)((JMenuItem)e.getSource()).getParent().getParent()).getEditor().getEditorComponent()).cut();
+//            }
+//        });
+//        copy = new JMenuItem("Copy");
+//        copy.addActionListener(new ActionListener() {
+//            @Override
+//            public void actionPerformed(ActionEvent e) {
+//                ((JTextField) ((JComboBox)((JMenuItem)e.getSource()).getParent()).getEditor().getEditorComponent()).copy();
+//            }
+//        });
+//        paste = new JMenuItem("Paste");
+//        paste.addActionListener(new ActionListener() {
+//            @Override
+//            public void actionPerformed(ActionEvent e) {
+//                ((JTextField) ((JComboBox)((JMenuItem)e.getSource()).getParent()).getEditor().getEditorComponent()).paste();
+//            }
+//        });
+//        comboBoxMenu.add(cut);
+//        comboBoxMenu.add(copy);
+//        comboBoxMenu.add(paste);
+//        
+//        messageField.setComponentPopupMenu(popupMenu);
+//        from.setComponentPopupMenu(comboBoxMenu);
+        // </editor-fold>
         
         frame.pack();
 
@@ -862,6 +932,7 @@ public class ArtemisGMMessenger {
         System.out.println(Arrays.toString(options));
         JComboBox jcb = new JComboBox(options);
         jcb.setEditable(true); 
+        //jcb.setComponentPopupMenu(popupMenu);
         //JOptionPane.show
         message = jcb;
         int response = JOptionPane.showConfirmDialog(null, message, title, JOptionPane.OK_CANCEL_OPTION);//, null, options, defaultIP);
@@ -946,7 +1017,10 @@ public class ArtemisGMMessenger {
         //from = from.replace("/", message);
         message = encryptCode.scrambleMessage(message, currentKey);
         from = filterString(from);
-        this.from.addItem(from);
+        if (Utilities.TryAddOption(this.from, from)) {
+            
+        }
+        //this.from.addItem(from);
         message = filterString(message);
         //TODO: Figure out how to utilize the "key"
         
@@ -965,7 +1039,7 @@ public class ArtemisGMMessenger {
         }
         message = encryptCode.scrambleMessage(message, currentKey);
         from = filterString(from);
-        this.from.addItem(from);
+        Utilities.TryAddOption(this.from, from);
         message = filterString(message);
         String m = "sendCommsTextAllClients(" + filter + ",\"" + from + "\",\"" + message + "^\");\n";
         System.out.println(m);

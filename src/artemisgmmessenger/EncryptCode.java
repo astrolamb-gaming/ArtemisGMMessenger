@@ -33,10 +33,10 @@ public class EncryptCode {
         '~',
         '+',
         '=',
-        '.',
-        '.',
-        '.',
-        '.',
+//        '.',
+//        '.',
+//        '.',
+//        '.',
         '.',
         ',',
         '.'
@@ -62,20 +62,29 @@ public class EncryptCode {
             char[] chars = message.toCharArray();
             
             for (int i = 0; i < chars.length; i++) {
+                System.out.println("i = " + i + "\nRand = " + rand);
+                System.out.println("Char in message: " + chars[i]);
+                System.out.println("useRegular: " + useRegular);
+                char c = chars[i];
                 if (i <= rand) {
-                    if (useRegular) {
-                            builder.append(chars[i]);
+                    System.out.println("i is less than or equal to rand");
+                    if (!useRegular) {
+                        System.out.println("Replacing character");
+                            c = unknowns[random.nextInt(unknowns.length)];
+                            System.out.println("Replace with: " + c);
                     } else {
-                            builder.append(unknowns[random.nextInt(unknowns.length)]);
+                        System.out.println("Not replacing character");
                     }
                 } 
                 if (i >= rand) {
-                    useRegular = !useRegular;
+                    System.out.println("i is greater than or equal to rand");
+                    useRegular = random.nextBoolean();
                     rand = random.nextInt(6); 
-                    System.out.println("Rand: " + rand);
-                    rand = rand + i;
                     rand = (useRegular) ? rand : rand/2;
+                    rand = rand + 1 + i;
+                    System.out.println("Rand: " + rand + "\nuseRegular: " + useRegular);
                 }
+                builder.append(c);
             }
             return builder.toString();
 
