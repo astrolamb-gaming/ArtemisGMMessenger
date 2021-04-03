@@ -159,7 +159,7 @@ public class ArtemisGMMessenger {
 //        }
         //sendIdleTextAllClients("hello", "there");
         Dimension buttonSize = new Dimension(175,40);
-        JFrame frame = new JFrame("Artemis Game Master Comms Console - v1.41b");
+        JFrame frame = new JFrame("Artemis Game Master Comms Console - v1.41");
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setPreferredSize(new Dimension(650,700));
